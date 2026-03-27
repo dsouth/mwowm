@@ -8,10 +8,13 @@ add_project_dependencies(
   language: 'c'
   )
 
-include = include_directories(['include'])
+include = include_directories(['include', 'protocol'])
 
 subdir('src')
+subdir('protocol')
+
+full_src_files = src_files + protocol_files
 
 executable('mwowm', 'src/main.c',
   include_directories: include,
-  sources: src_files)
+  sources: full_src_files)
