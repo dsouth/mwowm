@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
 	wl_list_remove(&wm.cursor_motion_listener.link);
 	wl_list_remove(&wm.cursor_motion_absolute_listener.link);
 	wl_list_remove(&wm.cursor_button_listener.link);
-	wl_list_remove(&wm.cursor_button_listener.link);
+	wl_list_remove(&wm.cursor_axis_listener.link);
 	wl_list_remove(&wm.cursor_frame_listener.link);
 	wl_list_remove(&wm.new_input_listener.link);
 	wl_list_remove(&wm.request_set_cursor_listener.link);

@@ -52,7 +52,7 @@ void output_new(struct wl_listener *listener, void *data) {
 	struct output *output = calloc(1, sizeof(*output));
 	output->wlr_output = wlr_output;
 	output->wm = wm;
-	add_signal_listener(&wlr_output->events.description, &output->destroy_listener, output_destroy);
+	add_signal_listener(&wlr_output->events.destroy, &output->destroy_listener, output_destroy);
 	add_signal_listener(&wlr_output->events.frame, &output->frame_listener, output_frame);
 	add_signal_listener(&wlr_output->events.request_state, &output->request_state_listener, output_request_state);
 
