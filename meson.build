@@ -5,6 +5,7 @@ add_global_arguments('-DWLR_USE_UNSTABLE', language: 'c')
 add_project_dependencies(
   dependency('wayland-server'),
   dependency('wlroots-0.19'),
+  dependency('xkbcommon'),
   language: 'c'
   )
 

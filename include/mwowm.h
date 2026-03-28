@@ -4,9 +4,9 @@
 #include <wayland-server-core.h>
 
 struct output {
+	struct wl_list link;
 	struct window_manager *wm;
 	struct wlr_output *wlr_output;
-	struct wl_list link;
 
 	struct wl_listener frame_listener;
 	struct wl_listener request_state_listener;
@@ -20,7 +20,7 @@ struct window_manager {
 	struct wlr_allocator *allocator;
 	struct wlr_output_layout *output_layout;
 
-	struct output output;
+	struct wl_list outputs;
 	struct wl_listener new_output_listener;
 
 	struct wlr_xdg_shell *xdg_shell;
@@ -37,7 +37,17 @@ struct window_manager {
 	struct wl_listener cursor_axis_listener;
 	struct wl_listener cursor_frame_listener;
 
+	struct wl_listener new_input_listener;
 
+	struct wlr_keyboard *wlr_keyboard;
+	struct wl_listener modifier_listener;
+	struct wl_listener key_listener;
+	struct wl_listener keyboard_destroy_listener;
+
+	struct wlr_seat *seat;
+	struct wl_listener request_set_cursor_listener;
+	struct wl_listener focus_change_listener;
+	struct wl_listener request_set_selection_listener;
 };
 
 #endif
