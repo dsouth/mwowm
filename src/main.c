@@ -44,6 +44,7 @@ int main(int argc, char* argv[]) {
 	wlr_data_device_manager_create(wm.display);
 	wm.output_layout = wlr_output_layout_create(wm.display);
 	wl_list_init(&wm.outputs);
+	wl_list_init(&wm.keyboards);
 	add_signal_listener(&wm.backend->events.new_output, &wm.new_output_listener, output_new);
 	wm.xdg_shell = wlr_xdg_shell_create(wm.display, 3);
 	add_signal_listener(&wm.xdg_shell->events.new_toplevel, &wm.new_xdg_toplevel_listener, new_xdg_toplevel);

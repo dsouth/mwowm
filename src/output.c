@@ -8,8 +8,30 @@
 #include "mwowm.h"
 #include "utils.h"
 
+float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+
 void output_frame(struct wl_listener *listener, void *data) {
 	wlr_log(WLR_DEBUG, "output frame called");
+	struct output *output = wl_container_of(listener, output, frame_listener);
+	struct wlr_output *wlr_output = output->wlr_output;
+
+	struct wlr_output_state output_state;
+	wlr_output_state_init(&output_state);
+	struct wlr_render_pass *pass = wlr_output_begin_render_pass(wlr_output, &output_state, NULL);
+	wlr_render_pass_add_rect(pass, &(struct wlr_render_rect_options){
+		.box = { .width = wlr_output->width,
+			 .height = wlr_output->height },
+		.color = {
+			background_color[0],
+			background_color[1],
+			background_color[2],
+			background_color[3],
+		},
+	});
+	wlr_output_add_software_cursors_to_render_pass(wlr_output, pass, NULL);
+	wlr_render_pass_submit(pass);
+	wlr_output_commit_state(wlr_output, &output_state);
+	wlr_output_state_finish(&output_state);
 }
 
 void output_request_state(struct wl_listener *listener, void *data) {

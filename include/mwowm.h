@@ -13,6 +13,15 @@ struct output {
 	struct wl_listener destroy_listener;
 };
 
+struct keyboard {
+	struct wl_list link;
+	struct window_manager *wm;
+	struct wlr_keyboard *wlr_keyboard;
+	struct wl_listener modifier_listener;
+	struct wl_listener key_listener;
+	struct wl_listener keyboard_destroy_listener;
+};
+
 struct window_manager {
 	struct wl_display *display;
 	struct wlr_backend *backend;
@@ -37,12 +46,8 @@ struct window_manager {
 	struct wl_listener cursor_axis_listener;
 	struct wl_listener cursor_frame_listener;
 
+	struct wl_list keyboards;
 	struct wl_listener new_input_listener;
-
-	struct wlr_keyboard *wlr_keyboard;
-	struct wl_listener modifier_listener;
-	struct wl_listener key_listener;
-	struct wl_listener keyboard_destroy_listener;
 
 	struct wlr_seat *seat;
 	struct wl_listener request_set_cursor_listener;
