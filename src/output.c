@@ -4,6 +4,7 @@
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/util/box.h>
 #include <wlr/util/log.h>
 
 #include "mwowm.h"
@@ -11,12 +12,12 @@
 
 float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
 
+
 void output_frame(struct wl_listener *listener, void *data) {
-  //wlr_log(WLR_DEBUG, "output frame");
+// wlr_log(WLR_DEBUG, "output frame");
   struct output *output = wl_container_of(listener, output, frame_listener);
   struct wlr_output *wlr_output = output->wlr_output;
   struct window_manager *wm = output->wm;
-
   struct wlr_output_state output_state;
   wlr_output_state_init(&output_state);
   struct wlr_render_pass *pass =
@@ -34,9 +35,8 @@ void output_frame(struct wl_listener *listener, void *data) {
                                  });
 
   struct wl_list *toplevels = &wm->toplevels;
-  //toplevels = wl_container_of(wm, toplevels, prev);
+  // toplevels = wl_container_of(wm, toplevels, prev);
   if (!wl_list_empty(toplevels)) {
-		// this line is crashing the compositor????
     struct xdg_toplevel *toplevel;
     toplevel = wl_container_of(toplevels, toplevel, link);
     wl_list_for_each(toplevel, toplevels, link) {
@@ -103,6 +103,25 @@ void output_new(struct wl_listener *listener, void *data) {
 
   struct output *output = calloc(1, sizeof(*output));
   output->wlr_output = wlr_output;
+  /*
+  bool focused = false;
+  if (wl_list_empty(&wm->outputs)) {
+    struct output *previous_output;
+    wl_list_for_each(previous_output, &wm->outputs, link) {
+      if (previous_output->focused) {
+        focused = true;
+        break;
+      }
+    }
+  }
+  
+  if (!focused) {
+    output->focused = true;
+    int32_t width = output->wlr_output->width / 2;
+    int32_t height = output->wlr_output->height / 2;
+    wlr_cursor_warp_absolute(wm->cursor, NULL, width, height);
+  }
+*/
   output->wm = wm;
   add_signal_listener(&wlr_output->events.destroy, &output->destroy_listener,
                       output_destroy);
