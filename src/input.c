@@ -1,6 +1,6 @@
-#include "mwowm.h"
 #include <stdint.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <wayland-server-core.h>
 #include <wayland-server-protocol.h>
 #include <wayland-util.h>
@@ -10,102 +10,119 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
+#include "mwowm.h"
 #include "utils.h"
 
-void key_press(struct wl_listener *listener, void *data) {
-	wlr_log(WLR_DEBUG, "key press called");
-	struct keyboard *keyboard = wl_container_of(listener, keyboard, key_listener);
-	struct wlr_keyboard_key_event *event = data;
+void spawn_command(const char *cmd) {
+  if (fork() == 0) {
+    execl("/bin/sh", "/bin/sh", "-c", cmd, (void *)NULL);
+  }
+}
 
-	uint32_t keycode = event->keycode + 8;
-	const xkb_keysym_t *syms;
-	int sym_size = xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state, keycode, &syms);
-	if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-		for (int i = 0; i < sym_size; i++) {
-			if (syms[i] == XKB_KEY_Escape) {
-				wl_display_terminate(keyboard->wm->display);
-			}
-		}
-	}
+void key_press(struct wl_listener *listener, void *data) {
+  wlr_log(WLR_DEBUG, "key press called");
+  struct keyboard *keyboard = wl_container_of(listener, keyboard, key_listener);
+  struct wlr_keyboard_key_event *event = data;
+
+  uint32_t keycode = event->keycode + 8;
+  const xkb_keysym_t *syms;
+  int sym_size =
+      xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state, keycode, &syms);
+  if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+    for (int i = 0; i < sym_size; i++) {
+      switch (syms[i]) {
+      case XKB_KEY_Escape:
+        wl_display_terminate(keyboard->wm->display);
+        break;
+      case XKB_KEY_Return:
+        spawn_command("foot");
+        break;
+      }
+    }
+  }
 }
 
 void modifier_press(struct wl_listener *listener, void *data) {
-	wlr_log(WLR_DEBUG, "modifier press called");
+  wlr_log(WLR_DEBUG, "modifier press called");
 }
 
 void keyboard_destroy(struct wl_listener *listener, void *data) {
-	wlr_log(WLR_DEBUG, "keyboard destroy called");
-	struct keyboard *keyboard = wl_container_of(listener, keyboard, keyboard_destroy_listener);
-	wl_list_remove(&keyboard->key_listener.link);
-	wl_list_remove(&keyboard->modifier_listener.link);
-	wl_list_remove(&keyboard->keyboard_destroy_listener.link);
-	wl_list_remove(&keyboard->link);
+  wlr_log(WLR_DEBUG, "keyboard destroy called");
+  struct keyboard *keyboard =
+      wl_container_of(listener, keyboard, keyboard_destroy_listener);
+  wl_list_remove(&keyboard->key_listener.link);
+  wl_list_remove(&keyboard->modifier_listener.link);
+  wl_list_remove(&keyboard->keyboard_destroy_listener.link);
+  wl_list_remove(&keyboard->link);
 
-	free(keyboard);
+  free(keyboard);
 }
 
 void new_keyboard(struct window_manager *wm, struct wlr_input_device *device) {
-	struct keyboard *keyboard = calloc(1, sizeof(*keyboard));
-	keyboard->wlr_keyboard = wlr_keyboard_from_input_device(device);
-	keyboard->wm = wm;
-	wl_list_insert(&wm->keyboards, &keyboard->link);
+  struct keyboard *keyboard = calloc(1, sizeof(*keyboard));
+  keyboard->wlr_keyboard = wlr_keyboard_from_input_device(device);
+  keyboard->wm = wm;
+  wl_list_insert(&wm->keyboards, &keyboard->link);
 
-	struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
-	struct xkb_keymap* keymap = xkb_keymap_new_from_names(context, NULL, XKB_KEYMAP_COMPILE_NO_FLAGS);
-	if (!wlr_keyboard_set_keymap(keyboard->wlr_keyboard, keymap)) {
-		wlr_log(WLR_ERROR, "faild to set keymap");
-	}
-	xkb_keymap_unref(keymap);
-	xkb_context_unref(context);
-	int32_t rate_hz = 25;
-	int32_t delay_ms = 600;
-	wlr_keyboard_set_repeat_info(keyboard->wlr_keyboard, rate_hz, delay_ms);
-	add_signal_listener(&keyboard->wlr_keyboard->events.key, &keyboard->key_listener, key_press);
-	add_signal_listener(&keyboard->wlr_keyboard->events.modifiers, &keyboard->modifier_listener, modifier_press);
-	add_signal_listener(&device->events.destroy, &keyboard->keyboard_destroy_listener, keyboard_destroy);
+  struct xkb_context *context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+  struct xkb_keymap *keymap =
+      xkb_keymap_new_from_names(context, NULL, XKB_KEYMAP_COMPILE_NO_FLAGS);
+  if (!wlr_keyboard_set_keymap(keyboard->wlr_keyboard, keymap)) {
+    wlr_log(WLR_ERROR, "faild to set keymap");
+  }
+  xkb_keymap_unref(keymap);
+  xkb_context_unref(context);
+  int32_t rate_hz = 25;
+  int32_t delay_ms = 600;
+  wlr_keyboard_set_repeat_info(keyboard->wlr_keyboard, rate_hz, delay_ms);
+  add_signal_listener(&keyboard->wlr_keyboard->events.key,
+                      &keyboard->key_listener, key_press);
+  add_signal_listener(&keyboard->wlr_keyboard->events.modifiers,
+                      &keyboard->modifier_listener, modifier_press);
+  add_signal_listener(&device->events.destroy,
+                      &keyboard->keyboard_destroy_listener, keyboard_destroy);
 
-	wlr_seat_set_keyboard(wm->seat, keyboard->wlr_keyboard);
+  wlr_seat_set_keyboard(wm->seat, keyboard->wlr_keyboard);
 }
 
 void new_pointer(struct window_manager *wm, struct wlr_input_device *device) {
-	wlr_log(WLR_DEBUG, "new pointer called");
-	// todo look at what we can do with libinput or something else?
-	wlr_cursor_attach_input_device(wm->cursor, device);
+  wlr_log(WLR_DEBUG, "new pointer called");
+  // todo look at what we can do with libinput or something else?
+  wlr_cursor_attach_input_device(wm->cursor, device);
 }
 
 void new_input(struct wl_listener *listener, void *data) {
-	wlr_log(WLR_DEBUG, "new input called");
-	struct wlr_input_device *device = data;
-	struct window_manager *wm = wl_container_of(listener, wm, new_input_listener);
+  wlr_log(WLR_DEBUG, "new input called");
+  struct wlr_input_device *device = data;
+  struct window_manager *wm = wl_container_of(listener, wm, new_input_listener);
 
-	// assuming JUST keyboards for the time being
-	switch (device->type) {
-	case WLR_INPUT_DEVICE_KEYBOARD:
-		new_keyboard(wm, device);
-		break;
-	case WLR_INPUT_DEVICE_POINTER:
-		new_pointer(wm, device);
-		break;
-	default:
-		break;
-	}
+  // assuming JUST keyboards for the time being
+  switch (device->type) {
+  case WLR_INPUT_DEVICE_KEYBOARD:
+    new_keyboard(wm, device);
+    break;
+  case WLR_INPUT_DEVICE_POINTER:
+    new_pointer(wm, device);
+    break;
+  default:
+    break;
+  }
 
-	uint32_t capabilities = WL_SEAT_CAPABILITY_POINTER;
-	if (!wl_list_empty(&wm->keyboards)) {
-		capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;
-	}
-	wlr_seat_set_capabilities(wm->seat, capabilities);
+  uint32_t capabilities = WL_SEAT_CAPABILITY_POINTER;
+  if (!wl_list_empty(&wm->keyboards)) {
+    capabilities |= WL_SEAT_CAPABILITY_KEYBOARD;
+  }
+  wlr_seat_set_capabilities(wm->seat, capabilities);
 }
 
 void request_set_cursor(struct wl_listener *listener, void *data) {
-	wlr_log(WLR_DEBUG, "request set cursor called");
+  wlr_log(WLR_DEBUG, "request set cursor called");
 }
 
 void focus_change(struct wl_listener *listener, void *data) {
-	wlr_log(WLR_DEBUG, "focus change called");
+  wlr_log(WLR_DEBUG, "focus change called");
 }
 
 void request_set_selection(struct wl_listener *listener, void *data) {
-	wlr_log(WLR_DEBUG, "request set selection called");
+  wlr_log(WLR_DEBUG, "request set selection called");
 }
-
