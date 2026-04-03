@@ -99,9 +99,10 @@ int main(int argc, char *argv[]) {
   }
   setenv("WAYLAND_DISPLAY", socket, true);
   wlr_log(WLR_INFO, "running server on WAYLAND_DISPLAY=%s", socket);
-  // center cursor here
   center_cursor_on_primary_monitor(wm.cursor, wm.output_layout);
   wlr_cursor_set_xcursor(wm.cursor, wm.cursor_manager, "default");
+  get_primary_output(&wm)->focused = true;
+  wm.input_mode = false;
   wl_display_run(wm.display);
   wl_display_destroy_clients(wm.display);
   wl_list_remove(&wm.new_output_listener.link);

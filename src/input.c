@@ -22,21 +22,24 @@ void spawn_command(const char *cmd) {
 void key_press(struct wl_listener *listener, void *data) {
   wlr_log(WLR_DEBUG, "key press called");
   struct keyboard *keyboard = wl_container_of(listener, keyboard, key_listener);
+  struct window_manager *wm = keyboard->wm;
   struct wlr_keyboard_key_event *event = data;
 
   uint32_t keycode = event->keycode + 8;
   const xkb_keysym_t *syms;
   int sym_size =
       xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state, keycode, &syms);
-  if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-    for (int i = 0; i < sym_size; i++) {
-      switch (syms[i]) {
-      case XKB_KEY_Escape:
-        wl_display_terminate(keyboard->wm->display);
-        break;
-      case XKB_KEY_Return:
-        spawn_command("foot");
-        break;
+  if (!wm->input_mode) {
+    if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+      for (int i = 0; i < sym_size; i++) {
+        switch (syms[i]) {
+        case XKB_KEY_Escape:
+          wl_display_terminate(keyboard->wm->display);
+          break;
+        case XKB_KEY_Return:
+          spawn_command("foot");
+          break;
+        }
       }
     }
   }
@@ -44,6 +47,17 @@ void key_press(struct wl_listener *listener, void *data) {
 
 void modifier_press(struct wl_listener *listener, void *data) {
   wlr_log(WLR_DEBUG, "modifier press called");
+  struct keyboard *keyboard = wl_container_of(listener, keyboard, modifier_listener);
+  struct window_manager *wm = keyboard->wm;
+  struct wlr_keyboard *wlr_keyboard = data;
+
+  uint32_t mod = wlr_keyboard_get_modifiers(wlr_keyboard);
+  // assumes that only the logo key is every pressed and not a good thing?
+  if (mod == WLR_MODIFIER_LOGO) {
+    wm->input_mode = ! wm->input_mode;
+  } else {
+    // pass on the modifier to the clients
+  }
 }
 
 void keyboard_destroy(struct wl_listener *listener, void *data) {

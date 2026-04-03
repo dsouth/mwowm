@@ -64,6 +64,8 @@ struct window_manager {
   struct wlr_output_layout *output_layout;
   struct wlr_compositor *compositor;
 
+  bool input_mode;
+
   struct wl_list outputs;
   struct wl_listener new_output_listener;
 

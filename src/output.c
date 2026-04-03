@@ -11,10 +11,11 @@
 #include "utils.h"
 
 float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-
+float focused_color[] = {0.15f, 0.15f, 0.75f, 1.0f};
+float input_color[] = {0.05f, 0.85f, 0.05f, 1.0f};
 
 void output_frame(struct wl_listener *listener, void *data) {
-// wlr_log(WLR_DEBUG, "output frame");
+  // wlr_log(WLR_DEBUG, "output frame");
   struct output *output = wl_container_of(listener, output, frame_listener);
   struct wlr_output *wlr_output = output->wlr_output;
   struct window_manager *wm = output->wm;
@@ -22,15 +23,18 @@ void output_frame(struct wl_listener *listener, void *data) {
   wlr_output_state_init(&output_state);
   struct wlr_render_pass *pass =
       wlr_output_begin_render_pass(wlr_output, &output_state, NULL);
+  float *color = wm->input_mode && output->focused ? input_color
+                 : wm->input_mode                  ? background_color
+                                                   : focused_color;
   wlr_render_pass_add_rect(pass, &(struct wlr_render_rect_options){
                                      .box = {.width = wlr_output->width,
                                              .height = wlr_output->height},
                                      .color =
                                          {
-                                             background_color[0],
-                                             background_color[1],
-                                             background_color[2],
-                                             background_color[3],
+                                             color[0],
+                                             color[1],
+                                             color[2],
+                                             color[3],
                                          },
                                  });
 
@@ -114,7 +118,7 @@ void output_new(struct wl_listener *listener, void *data) {
       }
     }
   }
-  
+
   if (!focused) {
     output->focused = true;
     int32_t width = output->wlr_output->width / 2;

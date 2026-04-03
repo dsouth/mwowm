@@ -23,18 +23,36 @@ void center_cursor_on_output(struct wlr_cursor *cursor,
   wlr_cursor_warp(cursor, NULL, x + width / 2, y + height / 2);
 }
 
-void center_cursor_on_primary_monitor(struct wlr_cursor *cursor,
-                                      struct wlr_output_layout *layouts) {
+struct wlr_output_layout_output *
+get_primary_output_layout(struct wlr_output_layout *layouts) {
   // assuming 0, 0 is the primary monitor, is this a good assumption?
-  struct wlr_output_layout_output *layout;
+  struct wlr_output_layout_output *layout = NULL;
   wl_list_for_each(layout, &layouts->outputs, link) {
     if (layout->x == 0 && layout->y == 0) {
       break;
     }
   }
-  // if we don't find 0, 0 then we're just centering on the last configured
+  // if we don't find 0, 0 then we're just returning the last configured
   // output... :/
-  center_cursor_on_output(cursor, layout);
+  return layout;
+}
+
+struct output *get_primary_output(struct window_manager *wm) {
+  struct wlr_output_layout_output *layout = get_primary_output_layout(wm->output_layout);
+  struct wlr_output *wlr_output = layout->output;
+  struct output *output;
+  wl_list_for_each(output, &wm->outputs, link) {
+    if (output->wlr_output == wlr_output) {
+      break;
+    }
+  }
+  wlr_log(WLR_DEBUG, "primary output is %s", output->wlr_output->name);
+  return output;
+}
+
+void center_cursor_on_primary_monitor(struct wlr_cursor *cursor,
+                                      struct wlr_output_layout *layouts) {
+  center_cursor_on_output(cursor, get_primary_output_layout(layouts));
 }
 
 void cursor_motion(struct wl_listener *listener, void *data) {
