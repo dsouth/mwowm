@@ -9,6 +9,7 @@
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_seat.h>
 #include <wlr/types/wlr_subcompositor.h>
 #include <wlr/types/wlr_xcursor_manager.h>
@@ -30,16 +31,20 @@ int main(int argc, char *argv[]) {
       wlr_backend_autocreate(wl_display_get_event_loop(wm.display), NULL);
   if (wm.backend == NULL) {
     wlr_log(WLR_ERROR, "failed to autocreate backend");
+    return 1;
   }
   wm.renderer = wlr_renderer_autocreate(wm.backend);
   if (wm.renderer == NULL) {
     wlr_log(WLR_ERROR, "faild to autocreate renderer");
+    return 1;
   }
   wlr_renderer_init_wl_display(wm.renderer, wm.display);
   wm.allocator = wlr_allocator_autocreate(wm.backend, wm.renderer);
   if (wm.allocator == NULL) {
     wlr_log(WLR_ERROR, "failed to autocreate allocator");
+    return 1;
   }
+  // do I need to hold on to the compositor???
   wm.compositor = wlr_compositor_create(wm.display, 5, wm.renderer);
   wlr_subcompositor_create(wm.display);
   wlr_data_device_manager_create(wm.display);
@@ -48,15 +53,13 @@ int main(int argc, char *argv[]) {
   wl_list_init(&wm.keyboards);
   add_signal_listener(&wm.backend->events.new_output, &wm.new_output_listener,
                       output_new);
+  wm.scene = wlr_scene_create();
+  wm.scene_layout = wlr_scene_attach_output_layout(wm.scene, wm.output_layout);
   wm.xdg_shell = wlr_xdg_shell_create(wm.display, 3);
   add_signal_listener(&wm.xdg_shell->events.new_toplevel,
                       &wm.new_xdg_toplevel_listener, new_xdg_toplevel);
   add_signal_listener(&wm.xdg_shell->events.new_popup,
                       &wm.new_xdg_popup_listener, new_xdg_popup);
-  add_signal_listener(&wm.xdg_shell->events.new_surface,
-                      &wm.new_xdg_surface_listener, new_xdg_surface);
-  add_signal_listener(&wm.xdg_shell->events.destroy, &wm.xdg_destroy_listener,
-                      xdg_destroy);
   wl_list_init(&wm.toplevels);
   wl_list_init(&wm.surfaces_xdg);
   wm.cursor = wlr_cursor_create();
@@ -99,17 +102,15 @@ int main(int argc, char *argv[]) {
   }
   setenv("WAYLAND_DISPLAY", socket, true);
   wlr_log(WLR_INFO, "running server on WAYLAND_DISPLAY=%s", socket);
-  center_cursor_on_primary_monitor(wm.cursor, wm.output_layout);
-  wlr_cursor_set_xcursor(wm.cursor, wm.cursor_manager, "default");
-  get_primary_output(&wm)->focused = true;
-  wm.input_mode = false;
+//  center_cursor_on_primary_monitor(wm.cursor, wm.output_layout);
+//  wlr_cursor_set_xcursor(wm.cursor, wm.cursor_manager, "default");
+//  get_primary_output(&wm)->focused = true;
+//  wm.input_mode = false;
   wl_display_run(wm.display);
   wl_display_destroy_clients(wm.display);
   wl_list_remove(&wm.new_output_listener.link);
   wl_list_remove(&wm.new_xdg_toplevel_listener.link);
   wl_list_remove(&wm.new_xdg_popup_listener.link);
-  wl_list_remove(&wm.new_xdg_surface_listener.link);
-  wl_list_remove(&wm.xdg_destroy_listener.link);
   wl_list_remove(&wm.cursor_motion_listener.link);
   wl_list_remove(&wm.cursor_motion_absolute_listener.link);
   wl_list_remove(&wm.cursor_button_listener.link);

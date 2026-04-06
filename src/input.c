@@ -19,17 +19,10 @@ void spawn_command(const char *cmd) {
   }
 }
 
-void key_press(struct wl_listener *listener, void *data) {
-  wlr_log(WLR_DEBUG, "key press called");
-  struct keyboard *keyboard = wl_container_of(listener, keyboard, key_listener);
-  struct window_manager *wm = keyboard->wm;
-  struct wlr_keyboard_key_event *event = data;
-
-  uint32_t keycode = event->keycode + 8;
-  const xkb_keysym_t *syms;
-  int sym_size =
-      xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state, keycode, &syms);
-  if (!wm->input_mode) {
+void key_press_modal(struct wlr_keyboard_key_event *event,
+                     int sym_size,
+                     const xkb_keysym_t *syms,
+                     struct keyboard *keyboard) {
     if (event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
       for (int i = 0; i < sym_size; i++) {
         switch (syms[i]) {
@@ -42,6 +35,24 @@ void key_press(struct wl_listener *listener, void *data) {
         }
       }
     }
+}
+
+void key_press(struct wl_listener *listener, void *data) {
+  wlr_log(WLR_DEBUG, "key press called");
+  struct keyboard *keyboard = wl_container_of(listener, keyboard, key_listener);
+  struct window_manager *wm = keyboard->wm;
+  struct wlr_keyboard_key_event *event = data;
+
+  uint32_t keycode = event->keycode + 8;
+  const xkb_keysym_t *syms;
+  int sym_size =
+      xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state, keycode, &syms);
+  if (!wm->input_mode) {
+    key_press_modal(event, sym_size, syms, keyboard);
+  } else {
+    struct wlr_seat *seat = wm->seat;
+    wlr_seat_set_keyboard(seat, keyboard->wlr_keyboard);
+    wlr_seat_keyboard_notify_key(seat, event->time_msec, event->keycode, event->state);
   }
 }
 
@@ -56,7 +67,8 @@ void modifier_press(struct wl_listener *listener, void *data) {
   if (mod == WLR_MODIFIER_LOGO) {
     wm->input_mode = ! wm->input_mode;
   } else {
-    // pass on the modifier to the clients
+    wlr_seat_set_keyboard(wm->seat, keyboard->wlr_keyboard);
+    wlr_seat_keyboard_notify_modifiers(wm->seat, &keyboard->wlr_keyboard->modifiers);
   }
 }
 
