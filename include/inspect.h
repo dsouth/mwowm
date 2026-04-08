@@ -3,6 +3,6 @@
 
 #include <wlr/types/wlr_scene.h>
 
-void print_scene_tree(struct wlr_scene *scene);
+const char* print_scene_tree(struct wlr_scene *scene);
 
 #endif

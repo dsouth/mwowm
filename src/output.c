@@ -11,7 +11,6 @@
 #include <wlr/util/log.h>
 
 #include "mwowm.h"
-#include "inspect.h"
 #include "stdbool.h"
 #include "utils.h"
 
@@ -23,7 +22,6 @@ void output_frame(struct wl_listener *listener, void *data) {
   //  wlr_log(WLR_DEBUG, "output frame");
   struct output *output = wl_container_of(listener, output, frame_listener);
   struct wlr_scene *scene = output->wm->scene;
-  print_scene_tree(scene);
   struct wlr_scene_output *scene_output =
       wlr_scene_get_scene_output(scene, output->wlr_output);
   wlr_scene_output_commit(scene_output, NULL);
@@ -92,7 +90,7 @@ void output_new(struct wl_listener *listener, void *data) {
   if (x == 0)
     wlr_scene_node_lower_to_bottom(&rect->node);
   struct wlr_scene_node *background = &output->background->node;
-  background->x = 2* x;
+  background->x = x;
   background->y = y;
 
   struct wlr_output_layout_output *layout_output =

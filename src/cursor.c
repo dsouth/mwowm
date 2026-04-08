@@ -1,6 +1,8 @@
+#include <linux/input-event-codes.h>
 #include <stdint.h>
 #include <strings.h>
 #include <wayland-server-core.h>
+#include <wayland-server-protocol.h>
 #include <wayland-util.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_output.h>
@@ -10,6 +12,7 @@
 #include <wlr/util/log.h>
 
 #include "mwowm.h"
+#include "inspect.h"
 
 void center_cursor_on_output(struct wlr_cursor *cursor,
                              struct wlr_output_layout_output *layout) {
@@ -38,7 +41,8 @@ get_primary_output_layout(struct wlr_output_layout *layouts) {
 }
 
 struct output *get_primary_output(struct window_manager *wm) {
-  struct wlr_output_layout_output *layout = get_primary_output_layout(wm->output_layout);
+  struct wlr_output_layout_output *layout =
+      get_primary_output_layout(wm->output_layout);
   struct wlr_output *wlr_output = layout->output;
   struct output *output;
   wl_list_for_each(output, &wm->outputs, link) {
@@ -66,7 +70,15 @@ void cursor_motion(struct wl_listener *listener, void *data) {
 
 void cursor_motion_absolute(struct wl_listener *listener, void *data) {}
 
-void cursor_button(struct wl_listener *listener, void *data) {}
+void cursor_button(struct wl_listener *listener, void *data) {
+  struct wlr_pointer_button_event *event = data;
+  if (event->state == WL_POINTER_BUTTON_STATE_PRESSED &&
+      event->button == BTN_LEFT) {
+    struct window_manager *wm =
+        wl_container_of(listener, wm, cursor_button_listener);
+    print_scene_tree(wm->scene);
+  }
+}
 
 void cursor_axis(struct wl_listener *listener, void *data) {}
 
