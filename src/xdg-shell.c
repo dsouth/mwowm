@@ -80,7 +80,7 @@ void handle_xdg_toplevel_commit(struct wl_listener *listener, void *data) {
       wl_container_of(listener, toplevel, wlr_surface_commit_listener);
   if (toplevel->wlr_xdg_toplevel->base->initial_commit) {
     // let the app determine FOR THE TIME BEING...
-    wlr_xdg_toplevel_set_size(toplevel->wlr_xdg_toplevel, 1920, 1080);
+    wlr_xdg_toplevel_set_size(toplevel->wlr_xdg_toplevel, 1900, 1060);
   }
 }
 
@@ -107,9 +107,13 @@ void new_xdg_toplevel(struct wl_listener *listener, void *data) {
   struct xdg_toplevel *xdg_toplevel = calloc(1, sizeof(*xdg_toplevel));
   xdg_toplevel->wlr_xdg_toplevel = wlr_xdg_toplevel;
   xdg_toplevel->wm = wm;
+  wlr_log(WLR_DEBUG, "1 - new toplevel root tree's pointer %p", (void*)&wm->scene->tree);
   xdg_toplevel->scene_tree =
       wlr_scene_xdg_surface_create(&wm->scene->tree, wlr_xdg_toplevel->base);
+  wlr_log(WLR_DEBUG, "2 - new toplevel root tree's pointer %p", (void*)&wm->scene->tree);
   xdg_toplevel->scene_tree->node.data = xdg_toplevel;
+  xdg_toplevel->scene_tree->node.x = 1940;
+  xdg_toplevel->scene_tree->node.y = 10;
   wlr_xdg_toplevel->base->data = xdg_toplevel->scene_tree;
 
   add_signal_listener(&wlr_xdg_toplevel->base->surface->events.map,

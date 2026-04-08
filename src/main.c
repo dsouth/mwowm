@@ -49,11 +49,19 @@ int main(int argc, char *argv[]) {
   wlr_subcompositor_create(wm.display);
   wlr_data_device_manager_create(wm.display);
   wm.output_layout = wlr_output_layout_create(wm.display);
+  wlr_log(WLR_DEBUG, "outputs list pointer %p", (void*)&wm.outputs);
   wl_list_init(&wm.outputs);
+  wlr_log(WLR_DEBUG, "outputs list pointer %p", (void*)&wm.outputs);
   wl_list_init(&wm.keyboards);
   add_signal_listener(&wm.backend->events.new_output, &wm.new_output_listener,
                       output_new);
+  wlr_log(WLR_DEBUG, "scene pointer is %p", (void*)wm.scene);
   wm.scene = wlr_scene_create();
+  wlr_log(WLR_DEBUG, "scene pointer is %p", (void*)wm.scene);
+  wlr_log(WLR_DEBUG, "root tree's pointer %p", (void*)&(wm.scene->tree));
+  wlr_log(WLR_DEBUG, "root tree's children pointer %p", (void*)&wm.scene->tree.children);
+  wlr_log(WLR_DEBUG, "tree's children list is empty %s", (wl_list_empty(&wm.scene->tree.children) ? "TRUE":"FALSE"));
+  wlr_log(WLR_DEBUG, "outputs list pointer %p", (void*)&wm.outputs);
   wm.scene_layout = wlr_scene_attach_output_layout(wm.scene, wm.output_layout);
   wm.xdg_shell = wlr_xdg_shell_create(wm.display, 3);
   add_signal_listener(&wm.xdg_shell->events.new_toplevel,
@@ -102,6 +110,7 @@ int main(int argc, char *argv[]) {
   }
   setenv("WAYLAND_DISPLAY", socket, true);
   wlr_log(WLR_INFO, "running server on WAYLAND_DISPLAY=%s", socket);
+  wlr_log(WLR_DEBUG, "root tree's children pointer %p", (void*)&wm.scene->tree.children);
 //  center_cursor_on_primary_monitor(wm.cursor, wm.output_layout);
 //  wlr_cursor_set_xcursor(wm.cursor, wm.cursor_manager, "default");
 //  get_primary_output(&wm)->focused = true;

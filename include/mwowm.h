@@ -26,6 +26,7 @@ struct output {
   struct wl_list link;
   struct window_manager *wm;
   struct wlr_output *wlr_output;
+  struct wlr_scene_tree *background;
 
   bool focused;
 
