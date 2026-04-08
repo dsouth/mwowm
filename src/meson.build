@@ -3,4 +3,5 @@ src_files = files(['main.c',
   'xdg-shell.c',
   'cursor.c',
   'input.c',
-  'utils.c'])
+  'utils.c',
+  'inspect.c'])

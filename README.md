@@ -1,2 +1,2 @@
 # mwowm
-Wayland compositor
+Wayland compositor. Basically just scratching my own itch...
