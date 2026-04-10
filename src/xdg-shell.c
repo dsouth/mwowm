@@ -112,7 +112,7 @@ void new_xdg_toplevel(struct wl_listener *listener, void *data) {
       wlr_scene_xdg_surface_create(&wm->scene->tree, wlr_xdg_toplevel->base);
   wlr_log(WLR_DEBUG, "2 - new toplevel root tree's pointer %p", (void*)&wm->scene->tree);
   xdg_toplevel->scene_tree->node.data = xdg_toplevel;
-  xdg_toplevel->scene_tree->node.x = 1940;
+  xdg_toplevel->scene_tree->node.x = 10;
   xdg_toplevel->scene_tree->node.y = 10;
   wlr_xdg_toplevel->base->data = xdg_toplevel->scene_tree;
 

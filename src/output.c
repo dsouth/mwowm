@@ -19,12 +19,15 @@ float focused_color[] = {0.15f, 0.15f, 0.75f, 1.0f};
 float input_color[] = {0.05f, 0.85f, 0.05f, 1.0f};
 
 void output_frame(struct wl_listener *listener, void *data) {
-  //  wlr_log(WLR_DEBUG, "output frame");
   struct output *output = wl_container_of(listener, output, frame_listener);
+  wlr_log(WLR_DEBUG, "output frame name: %s", output->wlr_output->name);
   struct wlr_scene *scene = output->wm->scene;
   struct wlr_scene_output *scene_output =
       wlr_scene_get_scene_output(scene, output->wlr_output);
-  wlr_scene_output_commit(scene_output, NULL);
+  bool needs = wlr_scene_output_needs_frame(scene_output);
+  wlr_log(WLR_DEBUG, "output needs frame %s", needs ? "TRUE" : "FALSE");
+  bool success = wlr_scene_output_commit(scene_output, NULL);
+  wlr_log(WLR_DEBUG, "scene commit success %s", success ? "TRUE" : "FALSE");
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
   wlr_scene_output_send_frame_done(scene_output, &now);
@@ -47,15 +50,13 @@ void output_new(struct wl_listener *listener, void *data) {
   wlr_log(WLR_DEBUG, "output new called");
   struct window_manager *wm =
       wl_container_of(listener, wm, new_output_listener);
-  wlr_log(WLR_DEBUG, "1 - new output's root tree's children pointer %p",
-          (void *)&wm->scene->tree.children);
   struct wlr_output *wlr_output = data;
   wlr_output_init_render(wlr_output, wm->allocator, wm->renderer);
   struct wlr_output_state state;
   wlr_output_state_init(&state);
   wlr_output_state_set_enabled(&state, true);
 
-  // set up multi monitors here since my is always wrong ;)
+  // set up multi monitors here since mine is always wrong ;)
   int x, y;
   x = y = 0;
 
@@ -71,7 +72,6 @@ void output_new(struct wl_listener *listener, void *data) {
   wlr_output_state_finish(&state);
 
   struct output *output = calloc(1, sizeof(*output));
-  wlr_log(WLR_DEBUG, "output created pointer is %p", (void *)output);
   output->wlr_output = wlr_output;
   output->wm = wm;
   add_signal_listener(&wlr_output->events.destroy, &output->destroy_listener,
@@ -85,27 +85,16 @@ void output_new(struct wl_listener *listener, void *data) {
 
   output->background = wlr_scene_tree_create(&wm->scene->tree);
 
-  struct wlr_scene_rect *rect = wlr_scene_rect_create(output->background, wlr_output->width,
-                        wlr_output->height, (float[4]){1.0f, 0.0f, 0.0f, 1.0f});
-  if (x == 0)
-    wlr_scene_node_lower_to_bottom(&rect->node);
-  struct wlr_scene_node *background = &output->background->node;
-  background->x = x;
-  background->y = y;
+  int width, height;
+  wlr_output_effective_resolution(output->wlr_output, &width, &height);
+  wlr_scene_rect_create(output->background, width, height,
+                        (float[4]){1.0f, 0.0f, 0.0f, 1.0f});
+  wlr_scene_node_set_position(&output->background->node, x, y);
 
   struct wlr_output_layout_output *layout_output =
       wlr_output_layout_add(wm->output_layout, wlr_output, x, y);
-  wlr_log(WLR_DEBUG, "1 - new output root tree's pointer %p",
-          (void *)&(wm->scene->tree));
   struct wlr_scene_output *scene_output =
       wlr_scene_output_create(wm->scene, wlr_output);
-  wlr_log(WLR_DEBUG, "2 - new output root tree's pointer %p",
-          (void *)&(wm->scene->tree));
   wlr_scene_output_layout_add_output(wm->scene_layout, layout_output,
                                      scene_output);
-
-  wlr_log(WLR_DEBUG, "2 - new output's root tree's children pointer %p",
-          (void *)&wm->scene->tree.children);
-  // add background rect???
-  // struct wlr_scene_tree tree = scene_output->scene->tree;
 }
