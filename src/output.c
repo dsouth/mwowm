@@ -14,9 +14,9 @@
 #include "stdbool.h"
 #include "utils.h"
 
-float background_color[4] = {0.0f, 0.0f, 0.0f, 1.0f};
+float background_color[] = {0.0f, 0.0f, 0.0f, 1.0f};
 float focused_color[] = {0.15f, 0.15f, 0.75f, 1.0f};
-float input_color[] = {0.05f, 0.85f, 0.05f, 1.0f};
+float modal_color[] = {0.05f, 0.85f, 0.05f, 1.0f};
 
 void output_frame(struct wl_listener *listener, void *data) {
   struct output *output = wl_container_of(listener, output, frame_listener);
@@ -26,15 +26,15 @@ void output_frame(struct wl_listener *listener, void *data) {
   node = wl_container_of(output->background->children.next, node, link);
   wlr_log(WLR_DEBUG, "node type is %d", node->type);
   struct wlr_scene_rect *rect = wlr_scene_rect_from_node(node);
-  if (!wm->input_mode) {
-    if (output->focused) {
-      wlr_scene_rect_set_color(rect, focused_color);
-    } else {
-      wlr_scene_rect_set_color(rect, input_color);
-    }
+  float *color;
+  if (output->focused) {
+    color = focused_color;
+  } else if (!wm->input_mode) {
+    color = modal_color;
   } else {
-    wlr_scene_rect_set_color(rect, background_color);
+    color = background_color;
   }
+  wlr_scene_rect_set_color(rect, color);
   struct wlr_scene *scene = output->wm->scene;
   struct wlr_scene_output *scene_output =
       wlr_scene_get_scene_output(scene, output->wlr_output);
