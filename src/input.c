@@ -67,6 +67,12 @@ void modifier_press(struct wl_listener *listener, void *data) {
   // assumes that only the logo key is every pressed and not a good thing?
   if (mod == WLR_MODIFIER_LOGO) {
     wm->input_mode = ! wm->input_mode;
+    // IS there someway to get the output frames to commit to get the 
+    // change to render?
+    struct output *output;
+    wl_list_for_each(output, &wm->outputs, link) {
+      wlr_output_schedule_frame(output->wlr_output);
+    }
   } else {
     wlr_seat_set_keyboard(wm->seat, keyboard->wlr_keyboard);
     wlr_seat_keyboard_notify_modifiers(wm->seat, &keyboard->wlr_keyboard->modifiers);

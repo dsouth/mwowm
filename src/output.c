@@ -20,14 +20,25 @@ float input_color[] = {0.05f, 0.85f, 0.05f, 1.0f};
 
 void output_frame(struct wl_listener *listener, void *data) {
   struct output *output = wl_container_of(listener, output, frame_listener);
-  wlr_log(WLR_DEBUG, "output frame name: %s", output->wlr_output->name);
+  struct window_manager *wm = output->wm;
+  // assumes background will only have the one child
+  struct wlr_scene_node *node;
+  node = wl_container_of(output->background->children.next, node, link);
+  wlr_log(WLR_DEBUG, "node type is %d", node->type);
+  struct wlr_scene_rect *rect = wlr_scene_rect_from_node(node);
+  if (!wm->input_mode) {
+    if (output->focused) {
+      wlr_scene_rect_set_color(rect, focused_color);
+    } else {
+      wlr_scene_rect_set_color(rect, input_color);
+    }
+  } else {
+    wlr_scene_rect_set_color(rect, background_color);
+  }
   struct wlr_scene *scene = output->wm->scene;
   struct wlr_scene_output *scene_output =
       wlr_scene_get_scene_output(scene, output->wlr_output);
-  bool needs = wlr_scene_output_needs_frame(scene_output);
-  wlr_log(WLR_DEBUG, "output needs frame %s", needs ? "TRUE" : "FALSE");
-  bool success = wlr_scene_output_commit(scene_output, NULL);
-  wlr_log(WLR_DEBUG, "scene commit success %s", success ? "TRUE" : "FALSE");
+  wlr_scene_output_commit(scene_output, NULL);
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
   wlr_scene_output_send_frame_done(scene_output, &now);
@@ -88,7 +99,7 @@ void output_new(struct wl_listener *listener, void *data) {
   int width, height;
   wlr_output_effective_resolution(output->wlr_output, &width, &height);
   wlr_scene_rect_create(output->background, width, height,
-                        (float[4]){1.0f, 0.0f, 0.0f, 1.0f});
+                        (float[4]){0.0f, 0.0f, 0.0f, 1.0f});
   wlr_scene_node_set_position(&output->background->node, x, y);
 
   struct wlr_output_layout_output *layout_output =
