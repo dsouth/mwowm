@@ -107,15 +107,11 @@ void new_xdg_toplevel(struct wl_listener *listener, void *data) {
   struct xdg_toplevel *xdg_toplevel = calloc(1, sizeof(*xdg_toplevel));
   xdg_toplevel->wlr_xdg_toplevel = wlr_xdg_toplevel;
   xdg_toplevel->wm = wm;
-  wlr_log(WLR_DEBUG, "1 - new toplevel root tree's pointer %p", (void*)&wm->scene->tree);
   xdg_toplevel->scene_tree =
       wlr_scene_xdg_surface_create(&wm->scene->tree, wlr_xdg_toplevel->base);
-  wlr_log(WLR_DEBUG, "2 - new toplevel root tree's pointer %p", (void*)&wm->scene->tree);
-  xdg_toplevel->scene_tree->node.data = xdg_toplevel;
-  xdg_toplevel->scene_tree->node.x = 10;
-  xdg_toplevel->scene_tree->node.y = 10;
+  xdg_toplevel->scene_tree->node.data = xdg_toplevel; 
+  wlr_scene_node_set_position(&xdg_toplevel->scene_tree->node, 10, 10);
   wlr_xdg_toplevel->base->data = xdg_toplevel->scene_tree;
-
   add_signal_listener(&wlr_xdg_toplevel->base->surface->events.map,
                       &xdg_toplevel->wlr_surface_map_listener,
                       handle_xdg_toplevel_map);
