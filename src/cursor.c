@@ -121,7 +121,6 @@ void cursor_motion(struct wl_listener *listener, void *data) {
   wlr_cursor_move(wm->cursor, &event->pointer->base, event->delta_x,
                   event->delta_y);
   process_cursor_motion(wm, event->time_msec);
-  //  wlr_cursor_set_xcursor(wm->cursor, wm->cursor_manager, "default");
 }
 
 void cursor_motion_absolute(struct wl_listener *listener, void *data) {
