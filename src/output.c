@@ -55,6 +55,8 @@ void output_destroy(struct wl_listener *listener, void *data) {
   wl_list_remove(&output->request_state_listener.link);
   wl_list_remove(&output->destroy_listener.link);
   free(output);
+
+  // TODO clean up desktop allocations AS WELL!!!!
 }
 
 void output_setup_data(struct output *output, struct wlr_output *wlr_output, struct window_manager *wm) {
@@ -68,7 +70,9 @@ void output_setup_data(struct output *output, struct wlr_output *wlr_output, str
   add_signal_listener(&wlr_output->events.request_state,
                       &output->request_state_listener, output_request_state);
   wl_list_insert(&wm->outputs, &output->link);
-
+  struct desktop *desktop = calloc(1, sizeof(*desktop));
+  wl_list_init(&desktop->rows);
+  output->desktop = desktop;
 }
 
 void output_intialize_monitor(struct window_manager *wm, struct wlr_output *wlr_output) {

@@ -5,8 +5,18 @@
 #include <wayland-server-core.h>
 #include <wayland-util.h>
 
+struct desktop_row {
+  struct wl_list link;
+  struct wl_list toplevels;
+};
+
+struct desktop {
+  struct wl_list rows;
+};
+
 struct xdg_toplevel {
   struct wl_list link;
+  struct wl_list desktop_rows_link;
   struct window_manager *wm;
   struct wlr_xdg_toplevel *wlr_xdg_toplevel;
   struct wlr_scene_tree *scene_tree;
@@ -29,6 +39,8 @@ struct output {
   struct wlr_scene_tree *background;
 
   bool focused;
+
+  struct desktop *desktop;
 
   struct wl_listener frame_listener;
   struct wl_listener request_state_listener;
