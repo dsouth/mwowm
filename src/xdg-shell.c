@@ -1,13 +1,14 @@
 #include <stdlib.h>
 #include <wayland-server-core.h>
 #include <wayland-util.h>
+#include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/util/log.h>
 
 #include "mwowm.h"
+#include "output.h"
 #include "utils.h"
-#include "xdg-shell-protocol.h"
 
 void focus_toplevel(struct xdg_toplevel *toplevel) {
   if (toplevel == NULL) {
@@ -79,8 +80,12 @@ void handle_xdg_toplevel_commit(struct wl_listener *listener, void *data) {
   struct xdg_toplevel *toplevel =
       wl_container_of(listener, toplevel, wlr_surface_commit_listener);
   if (toplevel->wlr_xdg_toplevel->base->initial_commit) {
-    // let the app determine FOR THE TIME BEING...
-    wlr_xdg_toplevel_set_size(toplevel->wlr_xdg_toplevel, 1900, 1060);
+    struct window_manager *wm = toplevel->wm;
+    struct output *output = output_get_focused(wm);
+    int width, height;
+    wlr_output_effective_resolution(output->wlr_output, &width, &height);
+    wlr_xdg_toplevel_set_size(toplevel->wlr_xdg_toplevel, width - 2 * MARGIN,
+                              height - 2 * MARGIN);
   }
 }
 
@@ -99,6 +104,8 @@ void handle_xdg_toplevel_unmap(struct wl_listener *listener, void *data) {
   //  wl_list_remove(&toplevel->link);
 }
 
+void xdg_toplevel_initialize_data() {}
+
 void new_xdg_toplevel(struct wl_listener *listener, void *data) {
   wlr_log(WLR_DEBUG, "new xdg toplevel called");
   struct window_manager *wm =
@@ -109,8 +116,7 @@ void new_xdg_toplevel(struct wl_listener *listener, void *data) {
   xdg_toplevel->wm = wm;
   xdg_toplevel->scene_tree =
       wlr_scene_xdg_surface_create(&wm->scene->tree, wlr_xdg_toplevel->base);
-  xdg_toplevel->scene_tree->node.data = xdg_toplevel; 
-  wlr_scene_node_set_position(&xdg_toplevel->scene_tree->node, 10, 10);
+  xdg_toplevel->scene_tree->node.data = xdg_toplevel;
   wlr_xdg_toplevel->base->data = xdg_toplevel->scene_tree;
   add_signal_listener(&wlr_xdg_toplevel->base->surface->events.map,
                       &xdg_toplevel->wlr_surface_map_listener,
@@ -132,6 +138,13 @@ void new_xdg_toplevel(struct wl_listener *listener, void *data) {
   add_signal_listener(&wlr_xdg_toplevel->events.destroy,
                       &xdg_toplevel->destroy_listener, xdg_toplevel_destroy);
   wl_list_insert(&xdg_toplevel->wm->toplevels, &xdg_toplevel->link);
+
+  struct output *output = output_get_focused(wm);
+  struct wlr_scene_tree *background = output->background;
+  struct wlr_scene_node node = background->node;
+  int x = node.x + MARGIN;
+  int y = node.y + MARGIN;
+  wlr_scene_node_set_position(&xdg_toplevel->scene_tree->node, x, y);
 }
 
 void new_xdg_popup(struct wl_listener *listener, void *data) {

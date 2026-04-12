@@ -24,7 +24,6 @@ void output_frame(struct wl_listener *listener, void *data) {
   // assumes background will only have the one child
   struct wlr_scene_node *node;
   node = wl_container_of(output->background->children.next, node, link);
-  wlr_log(WLR_DEBUG, "node type is %d", node->type);
   struct wlr_scene_rect *rect = wlr_scene_rect_from_node(node);
   float *color;
   if (output->focused) {

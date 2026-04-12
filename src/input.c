@@ -37,7 +37,6 @@ void key_press_modal(struct wlr_keyboard_key_event *event, int sym_size,
 }
 
 void key_press(struct wl_listener *listener, void *data) {
-  wlr_log(WLR_DEBUG, "key press called");
   struct keyboard *keyboard = wl_container_of(listener, keyboard, key_listener);
   struct window_manager *wm = keyboard->wm;
   struct wlr_keyboard_key_event *event = data;
@@ -57,7 +56,6 @@ void key_press(struct wl_listener *listener, void *data) {
 }
 
 void modifier_press(struct wl_listener *listener, void *data) {
-  wlr_log(WLR_DEBUG, "modifier press called");
   struct keyboard *keyboard =
       wl_container_of(listener, keyboard, modifier_listener);
   struct window_manager *wm = keyboard->wm;
@@ -79,7 +77,6 @@ void modifier_press(struct wl_listener *listener, void *data) {
 }
 
 void keyboard_destroy(struct wl_listener *listener, void *data) {
-  wlr_log(WLR_DEBUG, "keyboard destroy called");
   struct keyboard *keyboard =
       wl_container_of(listener, keyboard, keyboard_destroy_listener);
   wl_list_remove(&keyboard->key_listener.link);
@@ -118,13 +115,11 @@ void new_keyboard(struct window_manager *wm, struct wlr_input_device *device) {
 }
 
 void new_pointer(struct window_manager *wm, struct wlr_input_device *device) {
-  wlr_log(WLR_DEBUG, "new pointer called");
   // todo look at what we can do with libinput or something else?
   wlr_cursor_attach_input_device(wm->cursor, device);
 }
 
 void new_input(struct wl_listener *listener, void *data) {
-  wlr_log(WLR_DEBUG, "new input called");
   struct wlr_input_device *device = data;
   struct window_manager *wm = wl_container_of(listener, wm, new_input_listener);
 

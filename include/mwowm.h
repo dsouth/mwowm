@@ -1,6 +1,8 @@
 #ifndef MWOWM_MAIN_HEADER
 #define MWOWM_MAIN_HEADER
 
+#define MARGIN 10
+
 #include <stdbool.h>
 #include <wayland-server-core.h>
 #include <wayland-util.h>
