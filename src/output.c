@@ -44,6 +44,17 @@ void output_frame(struct wl_listener *listener, void *data) {
   wlr_scene_output_send_frame_done(scene_output, &now);
 }
 
+struct output* output_get_focused(struct window_manager *wm) {
+  struct output *output;
+  wl_list_for_each(output, &wm->outputs, link) {
+    if (output->focused) {
+      return output;
+    }
+  }
+  wlr_log(WLR_ERROR, "return NULL for focused output!");
+  return NULL;
+}
+
 void output_request_state(struct wl_listener *listener, void *data) {
   wlr_log(WLR_DEBUG, "output request state called");
 }
