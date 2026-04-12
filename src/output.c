@@ -59,7 +59,7 @@ void output_destroy(struct wl_listener *listener, void *data) {
   // TODO clean up desktop allocations AS WELL!!!!
 }
 
-void output_setup_data(struct output *output, struct wlr_output *wlr_output, struct window_manager *wm) {
+void output_initialize_data(struct output *output, struct wlr_output *wlr_output, struct window_manager *wm) {
   output->wlr_output = wlr_output;
   output->wm = wm;
   wlr_output->data = output;
@@ -116,7 +116,7 @@ void output_new(struct wl_listener *listener, void *data) {
   struct wlr_output *wlr_output = data;
   output_intialize_monitor(wm, wlr_output);
   struct output *output = calloc(1, sizeof(*output));
-  output_setup_data(output, wlr_output, wm);
+  output_initialize_data(output, wlr_output, wm);
   output->background = wlr_scene_tree_create(&wm->scene->tree);
   output_intialize_scene(output, wm, wlr_output);
 }
