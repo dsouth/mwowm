@@ -57,32 +57,7 @@ void output_destroy(struct wl_listener *listener, void *data) {
   free(output);
 }
 
-void output_new(struct wl_listener *listener, void *data) {
-  wlr_log(WLR_DEBUG, "output new called");
-  struct window_manager *wm =
-      wl_container_of(listener, wm, new_output_listener);
-  struct wlr_output *wlr_output = data;
-  wlr_output_init_render(wlr_output, wm->allocator, wm->renderer);
-  struct wlr_output_state state;
-  wlr_output_state_init(&state);
-  wlr_output_state_set_enabled(&state, true);
-
-  // set up multi monitors here since mine is always wrong ;)
-  int x, y;
-  x = y = 0;
-
-  if (strstr(wlr_output->name, "HDMI-A-1")) {
-    x = 1920;
-  }
-
-  struct wlr_output_mode *mode = wlr_output_preferred_mode(wlr_output);
-  if (mode != NULL) {
-    wlr_output_state_set_mode(&state, mode);
-  }
-  wlr_output_commit_state(wlr_output, &state);
-  wlr_output_state_finish(&state);
-
-  struct output *output = calloc(1, sizeof(*output));
+void output_setup_data(struct output *output, struct wlr_output *wlr_output, struct window_manager *wm) {
   output->wlr_output = wlr_output;
   output->wm = wm;
   wlr_output->data = output;
@@ -92,21 +67,52 @@ void output_new(struct wl_listener *listener, void *data) {
                       output_frame);
   add_signal_listener(&wlr_output->events.request_state,
                       &output->request_state_listener, output_request_state);
-
   wl_list_insert(&wm->outputs, &output->link);
 
-  output->background = wlr_scene_tree_create(&wm->scene->tree);
+}
 
+void output_intialize_monitor(struct window_manager *wm, struct wlr_output *wlr_output) {
+  struct wlr_output_state state;
+  wlr_output_init_render(wlr_output, wm->allocator, wm->renderer);
+  wlr_output_state_init(&state);
+  wlr_output_state_set_enabled(&state, true);
+  struct wlr_output_mode *mode = wlr_output_preferred_mode(wlr_output);
+  if (mode != NULL) {
+    wlr_output_state_set_mode(&state, mode);
+  }
+  wlr_output_commit_state(wlr_output, &state);
+  wlr_output_state_finish(&state);
+}
+
+void output_intialize_scene(struct output *output, struct window_manager *wm, struct wlr_output *wlr_output) {
+  // set up multi monitors here since mine is always wrong ;)
+  int x, y;
+  x = y = 0;
+  if (strstr(wlr_output->name, "HDMI-A-1")) {
+    x = 1920;
+  }
   int width, height;
   wlr_output_effective_resolution(output->wlr_output, &width, &height);
   wlr_scene_rect_create(output->background, width, height,
                         (float[4]){0.0f, 0.0f, 0.0f, 1.0f});
   wlr_scene_node_set_position(&output->background->node, x, y);
-
   struct wlr_output_layout_output *layout_output =
       wlr_output_layout_add(wm->output_layout, wlr_output, x, y);
   struct wlr_scene_output *scene_output =
       wlr_scene_output_create(wm->scene, wlr_output);
   wlr_scene_output_layout_add_output(wm->scene_layout, layout_output,
                                      scene_output);
+
+}
+
+void output_new(struct wl_listener *listener, void *data) {
+  wlr_log(WLR_DEBUG, "output new called");
+  struct window_manager *wm =
+      wl_container_of(listener, wm, new_output_listener);
+  struct wlr_output *wlr_output = data;
+  output_intialize_monitor(wm, wlr_output);
+  struct output *output = calloc(1, sizeof(*output));
+  output_setup_data(output, wlr_output, wm);
+  output->background = wlr_scene_tree_create(&wm->scene->tree);
+  output_intialize_scene(output, wm, wlr_output);
 }
