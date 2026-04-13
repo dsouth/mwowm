@@ -40,12 +40,10 @@ void key_press_modal(struct wlr_keyboard_key_event *event, int sym_size,
 
 bool keyboard_vt_switch(struct window_manager *wm, const xkb_keysym_t *syms,
                         size_t sym_size) {
-  wlr_log(WLR_DEBUG, "calling vt switch");
   for (size_t i = 0; i < sym_size; i++) {
     xkb_keysym_t keysym = syms[i];
     if (keysym >= XKB_KEY_XF86Switch_VT_1 &&
         keysym <= XKB_KEY_XF86Switch_VT_12) {
-      wlr_log(WLR_DEBUG, "switch key pressed!");
       if (wm->session) {
         unsigned vt = keysym - XKB_KEY_XF86Switch_VT_1 + 1;
         wlr_session_change_vt(wm->session, vt);
