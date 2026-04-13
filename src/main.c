@@ -28,7 +28,7 @@ int main(int argc, char *argv[]) {
   struct window_manager wm = {0};
   wm.display = wl_display_create();
   wm.backend =
-      wlr_backend_autocreate(wl_display_get_event_loop(wm.display), NULL);
+      wlr_backend_autocreate(wl_display_get_event_loop(wm.display), &wm.session);
   if (wm.backend == NULL) {
     wlr_log(WLR_ERROR, "failed to autocreate backend");
     return 1;

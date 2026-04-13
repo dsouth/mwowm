@@ -1,9 +1,11 @@
+#include <stddef.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <wayland-server-core.h>
 #include <wayland-server-protocol.h>
 #include <wayland-util.h>
+#include <wlr/backend/session.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_seat.h>
 #include <wlr/util/log.h>
@@ -36,6 +38,24 @@ void key_press_modal(struct wlr_keyboard_key_event *event, int sym_size,
   }
 }
 
+bool keyboard_vt_switch(struct window_manager *wm, const xkb_keysym_t *syms,
+                        size_t sym_size) {
+  wlr_log(WLR_DEBUG, "calling vt switch");
+  for (size_t i = 0; i < sym_size; i++) {
+    xkb_keysym_t keysym = syms[i];
+    if (keysym >= XKB_KEY_XF86Switch_VT_1 &&
+        keysym <= XKB_KEY_XF86Switch_VT_12) {
+      wlr_log(WLR_DEBUG, "switch key pressed!");
+      if (wm->session) {
+        unsigned vt = keysym - XKB_KEY_XF86Switch_VT_1 + 1;
+        wlr_session_change_vt(wm->session, vt);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
 void key_press(struct wl_listener *listener, void *data) {
   struct keyboard *keyboard = wl_container_of(listener, keyboard, key_listener);
   struct window_manager *wm = keyboard->wm;
@@ -45,13 +65,15 @@ void key_press(struct wl_listener *listener, void *data) {
   const xkb_keysym_t *syms;
   int sym_size =
       xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state, keycode, &syms);
-  if (!wm->input_mode) {
-    key_press_modal(event, sym_size, syms, keyboard);
-  } else {
-    struct wlr_seat *seat = wm->seat;
-    wlr_seat_set_keyboard(seat, keyboard->wlr_keyboard);
-    wlr_seat_keyboard_notify_key(seat, event->time_msec, event->keycode,
-                                 event->state);
+  if (!keyboard_vt_switch(wm, syms, sym_size)) {
+    if (!wm->input_mode) {
+      key_press_modal(event, sym_size, syms, keyboard);
+    } else if (!keyboard_vt_switch(wm, syms, sym_size)) {
+      struct wlr_seat *seat = wm->seat;
+      wlr_seat_set_keyboard(seat, keyboard->wlr_keyboard);
+      wlr_seat_keyboard_notify_key(seat, event->time_msec, event->keycode,
+                                   event->state);
+    }
   }
 }
 

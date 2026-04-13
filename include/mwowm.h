@@ -69,6 +69,7 @@ struct keyboard {
 struct window_manager {
   struct wl_display *display;
   struct wlr_backend *backend;
+  struct wlr_session *session;
   struct wlr_renderer *renderer;
   struct wlr_allocator *allocator;
   struct wlr_output_layout *output_layout;
