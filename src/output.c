@@ -43,7 +43,22 @@ void output_frame(struct wl_listener *listener, void *data) {
   wlr_scene_output_send_frame_done(scene_output, &now);
 }
 
-struct output* output_get_focused(struct window_manager *wm) {
+void output_update_focus(struct window_manager *wm, struct output *focus) {
+  if (focus->focused) {
+    return;
+  }
+  struct output *output;
+  wl_list_for_each(output, &wm->outputs, link) {
+    if (output == focus) {
+      output->focused = true;
+    } else if (output->focused) {
+      output->focused = false;
+    }
+    wlr_output_schedule_frame(output->wlr_output);
+  }
+}
+
+struct output *output_get_focused(struct window_manager *wm) {
   struct output *output;
   wl_list_for_each(output, &wm->outputs, link) {
     if (output->focused) {
@@ -69,7 +84,9 @@ void output_destroy(struct wl_listener *listener, void *data) {
   // TODO clean up desktop allocations AS WELL!!!!
 }
 
-void output_initialize_data(struct output *output, struct wlr_output *wlr_output, struct window_manager *wm) {
+void output_initialize_data(struct output *output,
+                            struct wlr_output *wlr_output,
+                            struct window_manager *wm) {
   output->wlr_output = wlr_output;
   output->wm = wm;
   wlr_output->data = output;
@@ -85,7 +102,8 @@ void output_initialize_data(struct output *output, struct wlr_output *wlr_output
   output->desktop = desktop;
 }
 
-void output_intialize_monitor(struct window_manager *wm, struct wlr_output *wlr_output) {
+void output_intialize_monitor(struct window_manager *wm,
+                              struct wlr_output *wlr_output) {
   struct wlr_output_state state;
   wlr_output_init_render(wlr_output, wm->allocator, wm->renderer);
   wlr_output_state_init(&state);
@@ -98,7 +116,8 @@ void output_intialize_monitor(struct window_manager *wm, struct wlr_output *wlr_
   wlr_output_state_finish(&state);
 }
 
-void output_intialize_scene(struct output *output, struct window_manager *wm, struct wlr_output *wlr_output) {
+void output_intialize_scene(struct output *output, struct window_manager *wm,
+                            struct wlr_output *wlr_output) {
   // set up multi monitors here since mine is always wrong ;)
   int x, y;
   x = y = 0;
@@ -116,7 +135,6 @@ void output_intialize_scene(struct output *output, struct window_manager *wm, st
       wlr_scene_output_create(wm->scene, wlr_output);
   wlr_scene_output_layout_add_output(wm->scene_layout, layout_output,
                                      scene_output);
-
 }
 
 void output_new(struct wl_listener *listener, void *data) {
