@@ -55,29 +55,28 @@ struct output *output_get_focused(struct window_manager *wm) {
   return NULL;
 }
 
-void output_move_focus(struct window_manager *wm, enum wlr_direction dir) {
-  struct output *output = output_get_focused(wm);
-  struct wlr_scene_output *focused_scene_output =
+void output_get_center_x_y(struct output *output, struct window_manager *wm,
+                           double *x, double *y) {
+  struct wlr_scene_output *scene_output =
       wlr_scene_get_scene_output(wm->scene, output->wlr_output);
   int width, height;
-  double x, y;
   wlr_output_effective_resolution(output->wlr_output, &width, &height);
-  x = focused_scene_output->x + width / 2.0;
-  y = focused_scene_output->y + height / 2.0;
+  *x = scene_output->x + width / 2.0;
+  *y = scene_output->y + height / 2.0;
+}
+
+void output_move_focus(struct window_manager *wm, enum wlr_direction dir) {
+  struct output *output = output_get_focused(wm);
+  double x, y;
+  output_get_center_x_y(output, wm, &x, &y);
   struct output *focus_output =
       wlr_output_layout_adjacent_output(wm->output_layout, dir,
                                         output->wlr_output, x, y)
           ->data;
   struct wlr_surface *surface = NULL;
   double *px = 0, *py = 0;
-  int target_width, target_height;
   double target_x, target_y;
-  wlr_output_effective_resolution(focus_output->wlr_output, &target_width,
-                                  &target_height);
-  struct wlr_scene_output *target_scene_output =
-      wlr_scene_get_scene_output(wm->scene, focus_output->wlr_output);
-  target_x = target_scene_output->x + target_width / 2.0;
-  target_y = target_scene_output->y + target_height / 2.0;
+  output_get_center_x_y(focus_output, wm, &target_x, &target_y);
   struct xdg_toplevel *toplevel =
       toplevel_at(wm, target_x, target_y, &surface, px, py);
   if (toplevel) {

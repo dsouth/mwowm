@@ -112,7 +112,6 @@ void xdg_resize(struct wl_listener *listener, void *data) {
 }
 
 void handle_xdg_toplevel_commit(struct wl_listener *listener, void *data) {
-//  wlr_log(WLR_DEBUG, "handle wlr surface commit called");
   struct xdg_toplevel *toplevel =
       wl_container_of(listener, toplevel, wlr_surface_commit_listener);
   if (toplevel->wlr_xdg_toplevel->base->initial_commit) {
