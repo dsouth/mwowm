@@ -11,11 +11,9 @@
 #include "output.h"
 #include "utils.h"
 
-struct xdg_toplevel *toplevel_at(struct window_manager *wm,
-                                          double x, double y,
-                                         struct wlr_surface **surface,
-                                         double *px, double *py) {
-  wlr_log(WLR_DEBUG, "desktop at %f, %f", x, y);
+struct xdg_toplevel *toplevel_at(struct window_manager *wm, double x, double y,
+                                 struct wlr_surface **surface, double *px,
+                                 double *py) {
   struct wlr_scene_node *node =
       wlr_scene_node_at(&wm->scene->tree.node, x, y, px, py);
   if (node == NULL || node->type != WLR_SCENE_NODE_BUFFER) {
@@ -42,13 +40,11 @@ struct xdg_toplevel *toplevel_at(struct window_manager *wm,
 }
 
 struct xdg_toplevel *toplevel_at_cursor(struct window_manager *wm,
-                                         struct wlr_cursor *cursor,
-                                         struct wlr_surface **surface,
-                                         double *x, double *y) {
+                                        struct wlr_cursor *cursor,
+                                        struct wlr_surface **surface, double *x,
+                                        double *y) {
   return toplevel_at(wm, cursor->x, cursor->y, surface, x, y);
 }
-
-
 
 void toplevel_focus(struct xdg_toplevel *toplevel) {
   if (toplevel == NULL) {
