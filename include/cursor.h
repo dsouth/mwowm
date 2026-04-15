@@ -11,11 +11,9 @@ void cursor_motion_absolute(struct wl_listener *, void *);
 void cursor_button(struct wl_listener *, void *);
 void cursor_axis(struct wl_listener *, void *);
 void cursor_frame(struct wl_listener *, void *);
-
 void center_cursor_on_output(struct wlr_cursor *,
                              struct wlr_output_layout_output *);
-void center_cursor_on_primary_monitor(struct wlr_cursor *,
+void cursor_center_on_primary_monitor(struct wlr_cursor *,
                                       struct wlr_output_layout *);
-struct output *get_primary_output(struct window_manager *);
 
 #endif

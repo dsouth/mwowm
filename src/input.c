@@ -13,7 +13,6 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
-#include "inspect.h"
 #include "mwowm.h"
 #include "output.h"
 #include "utils.h"
@@ -22,20 +21,6 @@ void spawn_command(const char *cmd) {
   if (fork() == 0) {
     setsid();
     execl("/bin/sh", "/bin/sh", "-c", cmd, (void *)NULL);
-  }
-}
-
-void output_move_focus(struct window_manager *wm, enum wlr_direction dir) {
-  struct output *output = output_get_focused(wm);
-  struct wlr_scene_node node = output->background->node;
-  if ((dir == WLR_DIRECTION_LEFT && node.x > 0) ||
-      (dir == WLR_DIRECTION_RIGHT && node.x == 0)) {
-    int width, height;
-    wlr_output_effective_resolution(output->wlr_output, &width, &height);
-    struct output *focus_output = wlr_output_layout_adjacent_output(
-        wm->output_layout, dir, output->wlr_output, (node.x + width) / 2.0,
-        (node.y + height) / 2.0)->data;
-    output_update_focus(wm, focus_output);
   }
 }
 

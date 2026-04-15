@@ -10,13 +10,95 @@
 #include <wlr/util/box.h>
 #include <wlr/util/log.h>
 
+#include "cursor.h"
 #include "mwowm.h"
-#include "stdbool.h"
+#include "output.h"
 #include "utils.h"
+#include "xdg-shell.h"
 
 float background_color[] = {0.0f, 0.0f, 0.0f, 1.0f};
 float focused_color[] = {0.15f, 0.15f, 0.75f, 1.0f};
 float modal_color[] = {0.05f, 0.85f, 0.05f, 1.0f};
+
+void output_update_focus(struct window_manager *wm, struct output *focus) {
+  if (focus->focused) {
+    return;
+  }
+  struct output *output;
+  wl_list_for_each(output, &wm->outputs, link) {
+    if (output == focus) {
+      output->focused = true;
+      // TODO do we want to move the cursor with the focus?!? maybe???
+    } else if (output->focused) {
+      output->focused = false;
+    }
+    wlr_output_schedule_frame(output->wlr_output);
+  }
+}
+
+struct output *output_get_focused(struct window_manager *wm) {
+  struct output *output;
+  wl_list_for_each(output, &wm->outputs, link) {
+    if (output->focused) {
+      return output;
+    }
+  }
+  wlr_log(WLR_ERROR, "return NULL for focused output!");
+  return NULL;
+}
+
+void output_move_focus(struct window_manager *wm, enum wlr_direction dir) {
+  struct output *output = output_get_focused(wm);
+  struct wlr_scene_node node = output->background->node;
+  if ((dir == WLR_DIRECTION_LEFT && node.x > 0) ||
+      (dir == WLR_DIRECTION_RIGHT && node.x == 0)) {
+    int width, height;
+    double x, y;
+    wlr_output_effective_resolution(output->wlr_output, &width, &height);
+    x = (node.x + width) / 2.0;
+    y = (node.x + height) / 2.0;
+    struct output *focus_output =
+        wlr_output_layout_adjacent_output(wm->output_layout, dir,
+                                          output->wlr_output, x, y)
+            ->data;
+    struct wlr_surface **surface = NULL;
+    double *px = 0, *py = 0;
+    struct xdg_toplevel *toplevel =
+        toplevel_at(wm, x, y, surface, px, py);
+    if (toplevel) {
+      toplevel_focus(toplevel);
+    }
+    output_update_focus(wm, focus_output);
+  }
+}
+
+struct wlr_output_layout_output *
+output_get_primary_output_layout(struct wlr_output_layout *layouts) {
+  // assuming 0, 0 is the primary monitor, is this a good assumption?
+  struct wlr_output_layout_output *layout = NULL;
+  wl_list_for_each(layout, &layouts->outputs, link) {
+    if (layout->x == 0 && layout->y == 0) {
+      break;
+    }
+  }
+  // if we don't find 0, 0 then we're just returning the last configured
+  // output... :/
+  return layout;
+}
+
+struct output *output_get_primary(struct window_manager *wm) {
+  struct wlr_output_layout_output *layout =
+      output_get_primary_output_layout(wm->output_layout);
+  struct wlr_output *wlr_output = layout->output;
+  struct output *output;
+  wl_list_for_each(output, &wm->outputs, link) {
+    if (output->wlr_output == wlr_output) {
+      break;
+    }
+  }
+  wlr_log(WLR_DEBUG, "primary output is %s", output->wlr_output->name);
+  return output;
+}
 
 void output_frame(struct wl_listener *listener, void *data) {
   struct output *output = wl_container_of(listener, output, frame_listener);
@@ -41,32 +123,6 @@ void output_frame(struct wl_listener *listener, void *data) {
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC, &now);
   wlr_scene_output_send_frame_done(scene_output, &now);
-}
-
-void output_update_focus(struct window_manager *wm, struct output *focus) {
-  if (focus->focused) {
-    return;
-  }
-  struct output *output;
-  wl_list_for_each(output, &wm->outputs, link) {
-    if (output == focus) {
-      output->focused = true;
-    } else if (output->focused) {
-      output->focused = false;
-    }
-    wlr_output_schedule_frame(output->wlr_output);
-  }
-}
-
-struct output *output_get_focused(struct window_manager *wm) {
-  struct output *output;
-  wl_list_for_each(output, &wm->outputs, link) {
-    if (output->focused) {
-      return output;
-    }
-  }
-  wlr_log(WLR_ERROR, "return NULL for focused output!");
-  return NULL;
 }
 
 void output_request_state(struct wl_listener *listener, void *data) {

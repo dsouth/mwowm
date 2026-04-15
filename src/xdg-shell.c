@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <wayland-server-core.h>
 #include <wayland-util.h>
+#include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_xdg_shell.h>
@@ -10,7 +11,46 @@
 #include "output.h"
 #include "utils.h"
 
-void focus_toplevel(struct xdg_toplevel *toplevel) {
+struct xdg_toplevel *toplevel_at(struct window_manager *wm,
+                                          double x, double y,
+                                         struct wlr_surface **surface,
+                                         double *px, double *py) {
+  wlr_log(WLR_DEBUG, "desktop at %f, %f", x, y);
+  struct wlr_scene_node *node =
+      wlr_scene_node_at(&wm->scene->tree.node, x, y, px, py);
+  if (node == NULL || node->type != WLR_SCENE_NODE_BUFFER) {
+    return NULL;
+  }
+  struct wlr_scene_buffer *scene_buffer = wlr_scene_buffer_from_node(node);
+  struct wlr_scene_surface *scene_surface =
+      wlr_scene_surface_try_from_buffer(scene_buffer);
+  if (!scene_surface) {
+    return NULL;
+  }
+  // TODO why is this happening???
+  *surface = scene_surface->surface;
+  struct wlr_scene_tree *tree = node->parent;
+  // only the root of the toplevel node will have data set
+  // to the toplevel struct
+  while (tree != NULL && tree->node.data == NULL) {
+    tree = tree->node.parent;
+  }
+  if (tree == NULL) {
+    return NULL;
+  }
+  return tree->node.data;
+}
+
+struct xdg_toplevel *toplevel_at_cursor(struct window_manager *wm,
+                                         struct wlr_cursor *cursor,
+                                         struct wlr_surface **surface,
+                                         double *x, double *y) {
+  return toplevel_at(wm, cursor->x, cursor->y, surface, x, y);
+}
+
+
+
+void toplevel_focus(struct xdg_toplevel *toplevel) {
   if (toplevel == NULL) {
     return;
   }
@@ -94,7 +134,7 @@ void handle_xdg_toplevel_map(struct wl_listener *listener, void *data) {
   struct xdg_toplevel *toplevel =
       wl_container_of(listener, toplevel, wlr_surface_map_listener);
   //  wl_list_insert(&toplevel->wm->toplevels, &toplevel->link);
-  focus_toplevel(toplevel);
+  toplevel_focus(toplevel);
 }
 
 void handle_xdg_toplevel_unmap(struct wl_listener *listener, void *data) {
