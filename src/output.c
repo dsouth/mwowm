@@ -20,15 +20,24 @@ float focused_color[] = {0.15f, 0.15f, 0.75f, 1.0f};
 float modal_color[] = {0.05f, 0.85f, 0.05f, 1.0f};
 
 void output_update_focus(struct window_manager *wm, struct output *focus) {
+  struct wlr_scene_node node_to_focus = focus->background->node;
+  wlr_log(WLR_DEBUG, "output to focus at %d, %d", node_to_focus.x,
+          node_to_focus.y);
   if (focus->focused) {
+    wlr_log(WLR_DEBUG, "target of focus update is already focused");
     return;
   }
   struct output *output;
   wl_list_for_each(output, &wm->outputs, link) {
+    struct wlr_scene_node node = output->background->node;
+    wlr_log(WLR_DEBUG, "output at %d, %d", node.x, node.y);
     if (output == focus) {
+      wlr_log(WLR_DEBUG, "is the output to focus");
       output->focused = true;
       // TODO do we want to move the cursor with the focus?!? maybe???
     } else if (output->focused) {
+      wlr_log(WLR_DEBUG,
+              "unfocus node that was focused that isn't node TO focus");
       output->focused = false;
     }
     wlr_output_schedule_frame(output->wlr_output);
@@ -48,27 +57,33 @@ struct output *output_get_focused(struct window_manager *wm) {
 
 void output_move_focus(struct window_manager *wm, enum wlr_direction dir) {
   struct output *output = output_get_focused(wm);
-  struct wlr_scene_node node = output->background->node;
-  if ((dir == WLR_DIRECTION_LEFT && node.x > 0) ||
-      (dir == WLR_DIRECTION_RIGHT && node.x == 0)) {
-    int width, height;
-    double x, y;
-    wlr_output_effective_resolution(output->wlr_output, &width, &height);
-    x = (node.x + width) / 2.0;
-    y = (node.x + height) / 2.0;
-    struct output *focus_output =
-        wlr_output_layout_adjacent_output(wm->output_layout, dir,
-                                          output->wlr_output, x, y)
-            ->data;
-    struct wlr_surface *surface = NULL;
-    double *px = 0, *py = 0;
-    struct xdg_toplevel *toplevel =
-        toplevel_at(wm, x, y, &surface, px, py);
-    if (toplevel) {
-      toplevel_focus(toplevel);
-    }
-    output_update_focus(wm, focus_output);
+  struct wlr_scene_output *focused_scene_output =
+      wlr_scene_get_scene_output(wm->scene, output->wlr_output);
+  int width, height;
+  double x, y;
+  wlr_output_effective_resolution(output->wlr_output, &width, &height);
+  x = (focused_scene_output->x + width) / 2.0;
+  y = (focused_scene_output->y + height) / 2.0;
+  struct output *focus_output =
+      wlr_output_layout_adjacent_output(wm->output_layout, dir,
+                                        output->wlr_output, x, y)
+          ->data;
+  struct wlr_surface *surface = NULL;
+  double *px = 0, *py = 0;
+  int target_width, target_height;
+  double target_x, target_y;
+  wlr_output_effective_resolution(focus_output->wlr_output, &target_width,
+                                  &target_height);
+  struct wlr_scene_output *target_scene_output =
+      wlr_scene_get_scene_output(wm->scene, focus_output->wlr_output);
+  target_x = target_scene_output->x + target_width / 2.0;
+  target_y = target_scene_output->y + target_height / 2.0;
+  struct xdg_toplevel *toplevel =
+      toplevel_at(wm, target_x, target_y, &surface, px, py);
+  if (toplevel) {
+    toplevel_focus(toplevel);
   }
+  output_update_focus(wm, focus_output);
 }
 
 struct wlr_output_layout_output *
