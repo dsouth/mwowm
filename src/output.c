@@ -60,10 +60,10 @@ void output_move_focus(struct window_manager *wm, enum wlr_direction dir) {
         wlr_output_layout_adjacent_output(wm->output_layout, dir,
                                           output->wlr_output, x, y)
             ->data;
-    struct wlr_surface **surface = NULL;
+    struct wlr_surface *surface = NULL;
     double *px = 0, *py = 0;
     struct xdg_toplevel *toplevel =
-        toplevel_at(wm, x, y, surface, px, py);
+        toplevel_at(wm, x, y, &surface, px, py);
     if (toplevel) {
       toplevel_focus(toplevel);
     }
