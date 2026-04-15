@@ -1,4 +1,3 @@
-#include <bits/time.h>
 #include <stdlib.h>
 #include <time.h>
 #include <wayland-server-core.h>
