@@ -62,8 +62,8 @@ void output_move_focus(struct window_manager *wm, enum wlr_direction dir) {
   int width, height;
   double x, y;
   wlr_output_effective_resolution(output->wlr_output, &width, &height);
-  x = (focused_scene_output->x + width) / 2.0;
-  y = (focused_scene_output->y + height) / 2.0;
+  x = focused_scene_output->x + width / 2.0;
+  y = focused_scene_output->y + height / 2.0;
   struct output *focus_output =
       wlr_output_layout_adjacent_output(wm->output_layout, dir,
                                         output->wlr_output, x, y)
